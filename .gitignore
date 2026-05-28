@@ -1,0 +1,64 @@
+# ==========================================
+# Python Core & Compilation
+# ==========================================
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+share/python-wheels/
+*.egg-info/
+.installed.cfg
+.modules.cfg
+.manifest
+*.manifest
+*.spec
+
+# ==========================================
+# Modern Python & Workspace Tools (uv / ruff)
+# ==========================================
+.venv/
+venv/
+ENV/
+env/
+# uv tracking files and environment checkpoints
+.uv/
+# Ruff cache directory (linter/formatter)
+.ruff_cache/
+
+# ==========================================
+# Django Specific Artifacts
+# ==========================================
+# Local development media uploads (avatars, attachments, etc.)
+media/
+
+# Collected static files for production deployment
+staticfiles/
+
+# ==========================================
+# Environment Variables & Security Credentials
+# ==========================================
+# NEVER commit raw secret keys, DB passwords, or API tokens
+.env
+.env.local
+.env.dev
+.env.prod
+.env.*
+!.env.example # Allow tracking a template file without actual values
+
+# ==========================================
+# IDEs & System Editors
+# ==========================================
+.vscode/
