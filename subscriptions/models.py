@@ -54,3 +54,30 @@ class Subscription(models.Model):
 
     def __str__(self):
         return f"{self.user.username} - {self.service.name}"
+    
+
+class Budget(models.Model):
+    """
+    Represents a user's budget for subscriptions, 
+    allowing them to set limits and track spending.
+    """
+
+    class Duration(models.TextChoices):
+        MONTHLY = 'MONTHLY', 'Monthly'
+        QUATERLY = 'QUARTERLY', 'Quarterly'
+        SEMI_ANNUAL = 'SEMI_ANNUAL', 'Semi-Annual'
+        YEARLY = 'YEARLY', 'Yearly'
+
+    user = models.OneToOneField(CustomUser, on_delete=models.CASCADE, related_name='budget')
+    amount = models.DecimalField(max_digits=10, decimal_places=2)
+    duration = models.CharField(max_length=20, choices=Duration.choices, default=Duration.MONTHLY)
+    created_at = models.DateTimeField(auto_now_add=True)
+    updated_at = models.DateTimeField(auto_now=True)
+    description = models.TextField(blank=True, null=True)
+
+    class Meta:
+        ordering = ['amount']
+
+
+    def __str__(self):
+        return f"{self.user.username}'s Budget"
