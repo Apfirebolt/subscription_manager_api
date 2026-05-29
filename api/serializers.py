@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from users.models import CustomUser
-from subscriptions.models import Service, Budget
+from subscriptions.models import Service, Budget, Subscription
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -101,4 +101,26 @@ class ListBudgetSerializer(serializers.ModelSerializer):
         model = Budget
         fields = ('id', 'amount', 'duration', 'description', 'created_at', 'updated_at')
         read_only_fields = ('id', 'created_at', 'updated_at')
+
+
+
     
+class SubscriptionSerializer(serializers.ModelSerializer):
+    service_name = serializers.ReadOnlyField(source='service.name')
+
+    class Meta:
+        model = Subscription
+        fields = (
+            'id', 'user', 'service', 'service_name', 'plan_name', 
+            'status', 'cost', 'billing_cycle', 'next_billing_date', 
+            'notes', 'created_at', 'updated_at'
+        )
+        read_only_fields = ('id', 'user', 'created_at', 'updated_at')
+
+
+class ListSubscriptionSerializer(serializers.ModelSerializer):
+    service = ListServiceSerializer(read_only=True)
+
+    class Meta:
+        model = Subscription
+        fields = ('id', 'service', 'plan_name', 'status', 'cost', 'billing_cycle', 'next_billing_date')

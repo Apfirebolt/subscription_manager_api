@@ -11,13 +11,14 @@ from .serializers import (
     CustomUserSerializer,
     CustomTokenObtainPairSerializer,
     BudgetSerializer,
-    ListBudgetSerializer
+    ListBudgetSerializer,
+    SubscriptionSerializer
 )
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.views import TokenObtainPairView
 from users.models import CustomUser
-from subscriptions.models import Service, Budget
+from subscriptions.models import Service, Budget, Subscription
 from .serializers import ServiceSerializer, ListServiceSerializer
 from .permissions import IsBudgetOwner
 
@@ -112,6 +113,11 @@ class BudgetListCreateAPIView(ListCreateAPIView):
 
     def get_queryset(self):
         return Budget.objects.filter(user=self.request.user)
+    
+    def get_serializer_class(self):
+        if self.request.method == "GET":
+            return ListBudgetSerializer
+        return BudgetSerializer
 
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
@@ -129,3 +135,28 @@ class BudgetDetailAPIView(RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):
         instance.delete()
+
+
+class SubscriptionListCreateAPIView(ListCreateAPIView):
+    serializer_class = SubscriptionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Subscription.objects.filter(user=self.request.user)
+    
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+
+class SubscriptionDetailAPIView(RetrieveUpdateDestroyAPIView):
+    serializer_class = SubscriptionSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Subscription.objects.filter(user=self.request.user)
+    
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        instance.delete()   
