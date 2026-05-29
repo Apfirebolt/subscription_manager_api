@@ -1,13 +1,28 @@
-from rest_framework.generics import ListAPIView, CreateAPIView, RetrieveAPIView, RetrieveUpdateDestroyAPIView, DestroyAPIView
-from . serializers import ListCustomUserSerializer, CustomUserSerializer, CustomTokenObtainPairSerializer
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.generics import (
+    ListAPIView,
+    ListCreateAPIView,
+    CreateAPIView,
+    RetrieveAPIView,
+    RetrieveUpdateDestroyAPIView,
+    DestroyAPIView,
+)
+from .serializers import (
+    ListCustomUserSerializer,
+    CustomUserSerializer,
+    CustomTokenObtainPairSerializer,
+)
+from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
+from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.views import TokenObtainPairView
 from users.models import CustomUser
+from subscriptions.models import Service
+from .serializers import ServiceSerializer, ListServiceSerializer
 
 
 class CreateCustomUserApiView(CreateAPIView):
     serializer_class = CustomUserSerializer
     queryset = CustomUser.objects.all()
+
 
 class CustomTokenObtainPairView(TokenObtainPairView):
     # Replace the serializer with your custom
@@ -25,4 +40,64 @@ class DetailCustomUserApiView(RetrieveAPIView):
 
     def get_object(self):
         return self.request.user
+
+
+class ServiceListCreateAPIView(ListCreateAPIView):
+    """
+    GET: List all approved services (Public)
+    POST: Create a new service (Authenticated users only)
+    """
+
+    def get_queryset(self):
+        # GET requests only return approved services
+        if self.request.method == "GET":
+            return Service.objects.all()
+        # POST requests use the base queryset context
+        return Service.objects.all()
+
+    def get_serializer_class(self):
+        # Use the specific read-optimized serializer for listings
+        if self.request.method == "GET":
+            return ListServiceSerializer
+        return ServiceSerializer
+
+    def get_permissions(self):
+        # Protect creation endpoint, keep listing completely public
+        if self.request.method == "POST":
+            return [IsAuthenticated()]
+        return [AllowAny()]
     
+
+class ServiceDetailAPIView(RetrieveUpdateDestroyAPIView):
+    """
+    GET: Retrieve service details (Public)
+    PUT/PATCH/DELETE: Update or delete a service (Admin only)
+    """
+    queryset = Service.objects.all()
+    serializer_class = ServiceSerializer
+    permission_classes = [IsAuthenticated]
+
+
+    def get_permissions(self):
+        if self.request.method == "GET":
+            return [AllowAny()]
+        return [IsAuthenticated()]
+    
+
+    def perform_update(self, serializer):
+        # Only allow updates if user is admin or the creator of the service
+        service = self.get_object()
+        user = self.request.user
+        if user.is_staff or (service.is_custom and service.created_by == user):
+            serializer.save()
+        else:
+            raise PermissionDenied("You do not have permission to edit this service.")
+        
+    
+    def perform_destroy(self, instance):
+        # Only allow deletion if user is admin or the creator of the service
+        user = self.request.user
+        if user.is_staff or (instance.is_custom and instance.created_by == user):
+            instance.delete()
+        else:
+            raise PermissionDenied("You do not have permission to delete this service.")

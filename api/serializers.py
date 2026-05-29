@@ -1,5 +1,6 @@
 from rest_framework import serializers
 from users.models import CustomUser
+from subscriptions.models import Service
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -57,3 +58,29 @@ class ListCustomUserSerializer(serializers.ModelSerializer):
     class Meta:
         model = CustomUser
         fields = ('id', 'username', 'email', 'firstName', 'lastName', 'is_staff',)
+
+
+
+class ServiceSerializer(serializers.ModelSerializer):
+               
+    class Meta:
+        model = Service
+        fields = ('name', 'logo_url', 'description',)
+
+    def create(self, validated_data):
+        service = super(ServiceSerializer, self).create(validated_data)
+        service.save()
+        return service
+
+    def validate(self, attrs):
+        if attrs['logo_url'] == '':
+            raise serializers.ValidationError('Logo URL cannot be blank')
+        return attrs
+    
+
+class ListServiceSerializer(serializers.ModelSerializer):
+               
+    class Meta:
+        model = Service
+        fields = ('id', 'name', 'logo_url', 'description',)
+    
