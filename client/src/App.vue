@@ -1,29 +1,34 @@
 <template>
   <q-layout view="lHh Lpr lFf">
-    <q-header elevated class="bg-primary text-white">
-      <q-toolbar>
-        <q-toolbar-title>
-          Subscription Manager
-        </q-toolbar-title>
-        <q-btn flat round dense icon="account_circle" />
-      </q-toolbar>
-    </q-header>
+    <HeaderComponent @toggle-drawer="leftDrawerOpen = !leftDrawerOpen" />
+
+    <q-drawer
+      v-model="leftDrawerOpen"
+      show-if-above
+      bordered
+      class="bg-grey-1"
+    >
+      <q-list>
+        <q-item-label header>Navigation</q-item-label>
+        <q-item clickable to="/">
+          <q-item-section avatar><q-icon name="dashboard" /></q-item-section>
+          <q-item-section><q-item-label>Dashboard</q-item-label></q-item-section>
+        </q-item>
+      </q-list>
+    </q-drawer>
 
     <q-page-container>
-      <q-page class="q-pa-md">
-        <div class="text-h4 q-mb-md">Welcome back!</div>
-        
-        <q-card class="my-card bg-secondary text-white" style="max-width: 350px">
-          <q-card-section>
-            <div class="text-h6">Monthly Subscription Budget</div>
-            <div class="text-subtitle2">Limit Tracker</div>
-          </q-card-section>
-
-          <q-card-section class="q-pt-none">
-            Your current spending ring and analytics will show up here.
-          </q-card-section>
-        </q-card>
-      </q-page>
+      <router-view />
     </q-page-container>
+
+    <FooterComponent />
   </q-layout>
 </template>
+
+<script setup>
+import { ref } from 'vue'
+import HeaderComponent from './components/HeaderComponent.vue'
+import FooterComponent from './components/FooterComponent.vue'
+
+const leftDrawerOpen = ref(false)
+</script>
