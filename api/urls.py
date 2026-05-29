@@ -4,7 +4,9 @@ from .views import (
     CreateCustomUserApiView,
     DetailCustomUserApiView,
     ServiceListCreateAPIView,
-    ServiceDetailAPIView
+    ServiceDetailAPIView,
+    BudgetListCreateAPIView,
+    BudgetDetailAPIView
 )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -19,4 +21,6 @@ urlpatterns = [
     path("users", ListCustomUsersApiView.as_view(), name="list-users"),
     path("services", ServiceListCreateAPIView.as_view(), name="services"),
     path("services/<int:pk>", ServiceDetailAPIView.as_view(), name="service-detail"),
+    path("budgets", BudgetListCreateAPIView.as_view(), name="budgets"),
+    path("budgets/<int:pk>", BudgetDetailAPIView.as_view(), name="budget-detail"),
 ]

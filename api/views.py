@@ -10,13 +10,16 @@ from .serializers import (
     ListCustomUserSerializer,
     CustomUserSerializer,
     CustomTokenObtainPairSerializer,
+    BudgetSerializer,
+    ListBudgetSerializer
 )
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.views import TokenObtainPairView
 from users.models import CustomUser
-from subscriptions.models import Service
+from subscriptions.models import Service, Budget
 from .serializers import ServiceSerializer, ListServiceSerializer
+from .permissions import IsBudgetOwner
 
 
 class CreateCustomUserApiView(CreateAPIView):
@@ -101,3 +104,28 @@ class ServiceDetailAPIView(RetrieveUpdateDestroyAPIView):
             instance.delete()
         else:
             raise PermissionDenied("You do not have permission to delete this service.")
+        
+
+class BudgetListCreateAPIView(ListCreateAPIView):
+    serializer_class = BudgetSerializer
+    permission_classes = [IsAuthenticated]
+
+    def get_queryset(self):
+        return Budget.objects.filter(user=self.request.user)
+
+    def perform_create(self, serializer):
+        serializer.save(user=self.request.user)
+
+    
+class BudgetDetailAPIView(RetrieveUpdateDestroyAPIView):
+    serializer_class = BudgetSerializer
+    permission_classes = [IsAuthenticated, IsBudgetOwner]
+
+    def get_queryset(self):
+        return Budget.objects.filter(user=self.request.user)
+    
+    def perform_update(self, serializer):
+        serializer.save()
+
+    def perform_destroy(self, instance):
+        instance.delete()

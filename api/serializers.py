@@ -1,6 +1,6 @@
 from rest_framework import serializers
 from users.models import CustomUser
-from subscriptions.models import Service
+from subscriptions.models import Service, Budget
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
 
@@ -83,4 +83,22 @@ class ListServiceSerializer(serializers.ModelSerializer):
     class Meta:
         model = Service
         fields = ('id', 'name', 'logo_url', 'description',)
+
+
+class BudgetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Budget
+        fields = ('id', 'user', 'amount', 'duration', 'description', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'created_at', 'user', 'updated_at')
+
+    def perform_create(self, serializer):
+        # Pass the authenticated user directly into the save method
+        serializer.save(user=self.request.user)
+
+
+class ListBudgetSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Budget
+        fields = ('id', 'amount', 'duration', 'description', 'created_at', 'updated_at')
+        read_only_fields = ('id', 'created_at', 'updated_at')
     
