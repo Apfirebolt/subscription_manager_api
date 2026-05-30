@@ -62,3 +62,10 @@ staticfiles/
 # IDEs & System Editors
 # ==========================================
 .vscode/
+
+# frontend build artifacts (if applicable)
+dist/
+node_modules/
+
+# production
+client/build

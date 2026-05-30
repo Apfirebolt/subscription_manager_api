@@ -6,7 +6,9 @@ from .views import (
     ServiceListCreateAPIView,
     ServiceDetailAPIView,
     BudgetListCreateAPIView,
-    BudgetDetailAPIView
+    BudgetDetailAPIView,
+    SubscriptionListCreateAPIView,
+    SubscriptionDetailAPIView
 )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -23,4 +25,6 @@ urlpatterns = [
     path("services/<int:pk>", ServiceDetailAPIView.as_view(), name="service-detail"),
     path("budgets", BudgetListCreateAPIView.as_view(), name="budgets"),
     path("budgets/<int:pk>", BudgetDetailAPIView.as_view(), name="budget-detail"),
+    path("subscriptions", SubscriptionListCreateAPIView.as_view(), name="subscriptions"),
+    path("subscriptions/<int:pk>", SubscriptionDetailAPIView.as_view(), name="subscription-detail"),
 ]
