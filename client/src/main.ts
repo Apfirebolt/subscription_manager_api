@@ -4,7 +4,7 @@ import router from './routes' // Import the router configuration
 import App from './App.vue'
 
 // Import Quasar core and icon styles
-import { Quasar } from 'quasar'
+import { Quasar, Notify } from 'quasar'
 import '@quasar/extras/material-icons/material-icons.css'
 import 'quasar/src/css/index.sass'
 
@@ -14,7 +14,10 @@ app.use(createPinia())
 app.use(router)
 
 app.use(Quasar, {
-  plugins: {},
+  plugins: {
+    Notify
+  },
 })
 
 app.mount('#app')
+
