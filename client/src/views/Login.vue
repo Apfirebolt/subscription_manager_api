@@ -73,28 +73,40 @@
   </q-page>
 </template>
 
-<script setup>
+<script setup lang="ts">
 import { ref, reactive, onMounted } from "vue";
 import { Notify } from "quasar";
 import { useAuth } from "../store/auth";
 
-const authStore = useAuth();
-const loading = ref(false);
-const showPassword = ref(false);
+interface LoginForm {
+  email: string;
+  password: string;
+}
 
-const form = reactive({
+const authStore = useAuth();
+const loading = ref<boolean>(false);
+const showPassword = ref<boolean>(false);
+
+// Strongly typing the reactive form object
+const form = reactive<LoginForm>({
   email: "",
   password: "",
 });
 
-const onSubmit = () => {
+const onSubmit = (): void => {
   loading.value = true;
+  
   // Simulate API call
   setTimeout(async () => {
     try {
       await authStore.loginAction(form);
-    } catch (error) {
-      console.error("Login failed:", error);
+    } catch (error: unknown) {
+      // In TS, errors in catch blocks are typed as 'unknown' for safety
+      if (error instanceof Error) {
+        console.error("Login failed:", error.message);
+      } else {
+        console.error("An unknown error occurred:", error);
+      }
     } finally {
       loading.value = false;
     }
@@ -104,8 +116,7 @@ const onSubmit = () => {
 onMounted(() => {
   // If user is already logged in, redirect to dashboard
   console.log("Checking auth data on mount:", authStore.authData);
-  if (authStore.authData){
-    // show toast message
+  if (authStore.authData) {
     Notify.create({
       type: "positive",
       message: "You are already logged in! Redirecting to dashboard...",

@@ -88,22 +88,30 @@
   </q-page>
 </template>
 
-<script setup>
+<script setup lang = "ts">
 import { ref, reactive } from 'vue'
 import { useQuasar } from 'quasar'
 
 const $q = useQuasar()
-const loading = ref(false)
-const showPassword = ref(false)
+const loading = ref<boolean>(false)
+const showPassword = ref<boolean>(false)
 
-const form = reactive({
+// Define the interface for the registration form
+interface RegisterForm {
+  name: string;
+  email: string;
+  password: string;
+  confirmPassword: string;
+}
+
+const form = reactive<RegisterForm>({
   name: '',
   email: '',
   password: '',
   confirmPassword: ''
 })
 
-const onSubmit = () => {
+const onSubmit = (): void => {
   loading.value = true
   // Simulate API call
   setTimeout(() => {

@@ -81,8 +81,13 @@
 <script setup>
 import { ref } from 'vue'
 import { useQuasar } from 'quasar'
+import { useAuth } from '../store/auth'
 
 const $q = useQuasar()
+const authStore = useAuth()
+const authData = authStore.authData
+
+console.log('Auth Data in Dashboard:', authData)
 
 const columns = [
   { name: 'name', align: 'left', label: 'Service', field: 'name', sortable: true },
