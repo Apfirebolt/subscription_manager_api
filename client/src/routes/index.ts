@@ -25,11 +25,18 @@ const routes: Array<RouteRecordRaw> = [
     meta: { requiresAuth: true }
   },
   {
+    path: '/budget',
+    name: 'Budget',
+    component: () => import('../views/Budget.vue'),
+    meta: { requiresAuth: true }
+  },
+  {
     path: '/services',
     name: 'Services',
     component: () => import('../views/Service.vue'),
     meta: { requiresAuth: true }
-  }
+  },
+  
 ]
 
 const router = createRouter({

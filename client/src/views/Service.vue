@@ -28,13 +28,13 @@
     <q-dialog v-model="isServiceFormOpen" persistent>
       <q-card style="min-width: 350px; max-width: 500px; width: 100%;">
         <q-card-section class="row items-center q-pb-none">
-          <div class="text-h6">Track New Subscription</div>
+          <div class="text-h6">Track New Service</div>
           <q-space />
           <q-btn icon="close" flat round dense v-close-popup @click="closeServiceForm" />
         </q-card-section>
 
-        <q-card-section class="q-pt-md">
-          <ServiceForm @close="closeServiceForm" />
+        <q-card-section class="q-pa-none">
+          <ServiceForm @close="closeServiceForm" :service="selectedService" />
         </q-card-section>
       </q-card>
     </q-dialog>
@@ -58,21 +58,24 @@ const $q = useQuasar()
 const authStore = useAuth()
 const authData = authStore.authData
 const isServiceFormOpen = ref(false)
+const selectedService = ref(null)
 const serviceStore = useServiceStore()
-console.log('Auth Data in Dashboard:', authData)
-
-// Dummy placeholder methods for layout compilation stability
-const editService = (service: any) => {
-  console.log('Edit service', service)
-}
-const deleteService = (id: number) => {
-  console.log('Delete service id', id)
-}
 
 // services
 const services = computed(() => serviceStore.services) 
 
+const editService = (service: any) => {
+  selectedService.value = service
+  isServiceFormOpen.value = true
+}
+
+const deleteService = (id: number) => {
+  serviceStore.deleteService(id)
+}
+
+
 const openServiceForm = () => {
+  selectedService.value = null  
   isServiceFormOpen.value = true
 }
 

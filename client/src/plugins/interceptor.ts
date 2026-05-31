@@ -11,7 +11,6 @@ httpClient.interceptors.request.use(
     const userCookie = Cookie.get('user');
     if (userCookie) {
       const authData = JSON.parse(userCookie);
-      console.log('Auth Data in Interceptor:', authData);
       if (authData.access) {
         config.headers.Authorization = `Bearer ${authData.access}`;
       }
