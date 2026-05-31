@@ -145,14 +145,12 @@ const onSubmit = async (): Promise<void> => {
       await serviceStore.updateService(serviceId.value, form);
       if (!serviceStore.getServiceError) {
         Notify.create({ type: "positive", message: "Service updated successfully!" });
-        goBack();
       }
     } else {
       // Handle Create
       await serviceStore.createService(form);
       if (!serviceStore.getServiceError) {
         Notify.create({ type: "positive", message: "Service created successfully!" });
-        goBack();
       }
     }
   } catch (error) {
