@@ -11,8 +11,9 @@ httpClient.interceptors.request.use(
     const userCookie = Cookie.get('user');
     if (userCookie) {
       const authData = JSON.parse(userCookie);
-      if (authData.token) {
-        config.headers.Authorization = `Bearer ${authData.token}`;
+      console.log('Auth Data in Interceptor:', authData);
+      if (authData.access) {
+        config.headers.Authorization = `Bearer ${authData.access}`;
       }
     }
     return config;
@@ -29,3 +30,4 @@ httpClient.interceptors.response.use(
 );
 
 export default httpClient;
+

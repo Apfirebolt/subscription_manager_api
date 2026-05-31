@@ -1,5 +1,7 @@
 <template>
   <q-page class="q-pa-md">
+    <div class="text-h4 q-mb-md">Hello, {{ authData?.userData?.username || 'User' }}!</div>
+
     <div class="row q-col-gutter-md">
       <!-- Stats Cards -->
       <div class="col-12 col-sm-6 col-md-3">
