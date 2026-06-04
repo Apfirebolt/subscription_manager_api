@@ -125,7 +125,7 @@ export const useServiceStore = defineStore("services", {
       this.loading = true;
       this.error = null;
       try {
-        const response = await httpClient.put<ServiceItem>(`services/${id}/`, serviceData);
+        const response = await httpClient.put<ServiceItem>(`services/${id}`, serviceData);
         if (response.data) {
           // Update the item in the local state array
           const index = this.services.findIndex((item) => item.id === id);
@@ -149,7 +149,7 @@ export const useServiceStore = defineStore("services", {
       this.loading = true;
       this.error = null;
       try {
-        await httpClient.delete(`services/${id}/`);
+        await httpClient.delete(`services/${id}`);
         // Remove from local list state
         this.services = this.services.filter((item) => item.id !== id);
         this.pagination.count--;

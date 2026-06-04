@@ -26,7 +26,7 @@
                 <q-item-section>Profile</q-item-section>
               </q-item>
               <q-separator />
-              <q-item clickable v-close-popup>
+              <q-item @click="logout" clickable v-close-popup>
                 <q-item-section class="text-negative">Logout</q-item-section>
               </q-item>
             </q-list>
@@ -38,7 +38,20 @@
 </template>
 
 <script setup>
+import { computed } from 'vue'
+import { useAuth } from '../store/auth'
 defineEmits(['toggle-drawer'])
+
+const authStore = useAuth()
+const authData = authStore.authData
+
+const userName = computed(() => {
+  return authData.value?.user?.name || 'User'
+})
+
+const logout = () => {
+  authStore.logout()
+}
 </script>
 
 <style scoped></style>

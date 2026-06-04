@@ -22,10 +22,6 @@
           <q-item-section avatar><q-icon name="attach_money" /></q-item-section>
           <q-item-section><q-item-label>Budget</q-item-label></q-item-section>
         </q-item>
-        <q-item clickable to="/subscriptions">
-          <q-item-section avatar><q-icon name="subscriptions" /></q-item-section>
-          <q-item-section><q-item-label>Subscriptions</q-item-label></q-item-section>
-        </q-item>
         <q-item clickable to="/profile">
           <q-item-section avatar><q-icon name="person" /></q-item-section>
           <q-item-section><q-item-label>Profile</q-item-label></q-item-section>

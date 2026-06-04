@@ -77,7 +77,7 @@
       </q-card>
     </q-dialog>
 
-    <q-page-sticky v-if="!currentBudget && !budgetStore.isLoading" position="bottom-right" :offset="[18, 18]">
+    <q-page-sticky position="bottom-right" :offset="[18, 18]">
       <q-btn fab icon="add" color="primary" @click="openBudgetForm">
         <q-tooltip anchor="center left" self="center right">Create Budget</q-tooltip>
       </q-btn>
