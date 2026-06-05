@@ -38,11 +38,21 @@ class Subscription(models.Model):
         CANCELED = 'CANCELED', 'Canceled'
         EXPIRED = 'EXPIRED', 'Expired'
 
+    
+    class Category(models.TextChoices):
+        ENTERTAINMENT = 'ENTERTAINMENT', 'Entertainment'
+        PRODUCTIVITY = 'PRODUCTIVITY', 'Productivity'
+        UTILITIES = 'UTILITIES', 'Utilities'
+        EDUCATION = 'EDUCATION', 'Education'
+        SPORTS = 'SPORTS', 'Sports'
+        OTHER = 'OTHER', 'Other'
+
     user = models.ForeignKey(CustomUser, on_delete=models.CASCADE, related_name='subscriptions')
     service = models.ForeignKey(Service, on_delete=models.CASCADE)
     plan_name = models.CharField(max_length=100, blank=True, null=True)  # e.g., "Premium", "Basic"
     status = models.CharField(max_length=20, choices=Status.choices, default=Status.ACTIVE)
     cost = models.DecimalField(max_digits=10, decimal_places=2)
+    category = models.CharField(max_length=20, choices=Category.choices, default=Category.OTHER)
     billing_cycle = models.CharField(max_length=50, choices=BillingCycle.choices)  # e.g., "Monthly", "Yearly"
     next_billing_date = models.DateField()
     notes = models.TextField(blank=True, null=True)
