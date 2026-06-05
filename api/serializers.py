@@ -117,7 +117,7 @@ class ListServiceSerializer(serializers.ModelSerializer):
 class BudgetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Budget
-        fields = ('id', 'user', 'amount', 'duration', 'description', 'created_at', 'updated_at')
+        fields = ('id', 'user', 'amount', 'duration', 'description', 'created_at', 'updated_at', 'is_active')
         read_only_fields = ('id', 'created_at', 'user', 'updated_at')
 
     def perform_update(self, serializer):
@@ -140,7 +140,7 @@ class BudgetSerializer(serializers.ModelSerializer):
 class ListBudgetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Budget
-        fields = ('id', 'amount', 'duration', 'description', 'created_at', 'updated_at')
+        fields = ('id', 'amount', 'duration', 'description', 'created_at', 'updated_at', 'is_active')
         read_only_fields = ('id', 'created_at', 'updated_at')
 
 
