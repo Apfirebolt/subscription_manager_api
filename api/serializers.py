@@ -3,6 +3,7 @@ from users.models import CustomUser
 from subscriptions.models import Service, Budget, Subscription
 from rest_framework_simplejwt.tokens import RefreshToken
 from rest_framework_simplejwt.serializers import TokenObtainPairSerializer
+from django.contrib.auth.password_validation import validate_password
 
 
 class CustomTokenObtainPairSerializer(TokenObtainPairSerializer):
@@ -59,6 +60,34 @@ class ListCustomUserSerializer(serializers.ModelSerializer):
         model = CustomUser
         fields = ('id', 'username', 'email', 'firstName', 'lastName', 'is_staff',)
 
+    def validate_email(self, value):
+        """
+        Optional Validation: Ensure that if a user changes their email, 
+        it doesn't clash with an existing email address in the database.
+        """
+        user = self.context['request'].user
+        if CustomUser.objects.filter(email=value).exclude(pk=user.pk).exists():
+            raise serializers.ValidationError("A user with this email address already exists.")
+        return value
+    
+
+class ChangePasswordSerializer(serializers.Serializer):
+    old_password = serializers.CharField(required=True, write_only=True)
+    new_password = serializers.CharField(required=True, write_only=True)
+
+    def validate_old_password(self, value):
+        user = self.context['request'].user
+        if not user.check_password(value):
+            raise serializers.ValidationError("Your current password was entered incorrectly.")
+        return value
+
+    def validate(self, data):
+        validate_password(data['new_password'], user=self.context['request'].user)
+        
+        if data['old_password'] == data['new_password']:
+            raise serializers.ValidationError({"new_password": "The new password cannot be identical to your old one."})
+            
+        return data
 
 
 class ServiceSerializer(serializers.ModelSerializer):
@@ -88,18 +117,30 @@ class ListServiceSerializer(serializers.ModelSerializer):
 class BudgetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Budget
-        fields = ('id', 'user', 'amount', 'duration', 'description', 'created_at', 'updated_at')
+        fields = ('id', 'user', 'amount', 'duration', 'description', 'created_at', 'updated_at', 'is_active')
         read_only_fields = ('id', 'created_at', 'user', 'updated_at')
 
+    def perform_update(self, serializer):
+        # if there is no budget active for this user, set this one as active, else set it as inactive
+        user = self.context['request'].user
+        if not Budget.objects.filter(user=user, is_active=True).exists():
+            serializer.save(is_active=True)
+        else:
+            serializer.save(is_active=False)
+
     def perform_create(self, serializer):
-        # Pass the authenticated user directly into the save method
-        serializer.save(user=self.request.user)
+        # if there is no budget active for this user, set this one as active, else set it as inactive
+        user = self.context['request'].user
+        if not Budget.objects.filter(user=user, is_active=True).exists():
+            serializer.save(user=user, is_active=True)
+        else:
+            serializer.save(user=self.request.user, is_active=False)
 
 
 class ListBudgetSerializer(serializers.ModelSerializer):
     class Meta:
         model = Budget
-        fields = ('id', 'amount', 'duration', 'description', 'created_at', 'updated_at')
+        fields = ('id', 'amount', 'duration', 'description', 'created_at', 'updated_at', 'is_active')
         read_only_fields = ('id', 'created_at', 'updated_at')
 
 
@@ -116,6 +157,16 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             'notes', 'created_at', 'updated_at'
         )
         read_only_fields = ('id', 'user', 'created_at', 'updated_at')
+
+    def validate(self, attrs):
+        user = self.context['request'].user
+
+        if not Budget.objects.filter(user=user).exists():
+            raise serializers.ValidationError({
+                "budget": "You cannot track subscriptions until you establish a target budget threshold. Please configure a budget first."
+            })
+
+        return attrs
 
 
 class ListSubscriptionSerializer(serializers.ModelSerializer):

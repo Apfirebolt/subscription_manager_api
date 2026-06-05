@@ -1,126 +1,106 @@
 <template>
   <q-page class="q-pa-md">
-    <div class="row q-col-gutter-md">
-      <!-- Stats Cards -->
-      <div class="col-12 col-sm-6 col-md-3">
-        <q-card class="bg-primary text-white">
-          <q-card-section>
-            <div class="text-h6">Total Subscriptions</div>
-            <div class="text-h4">12</div>
-          </q-card-section>
-        </q-card>
+    <div class="text-h4 q-mb-md">Hello, {{ authData?.userData?.username || 'User' }}!</div>
+
+    <div v-if="subscriptionStore.isLoading || serviceStore.isLoading" class="row justify-center q-my-xl">
+      <q-spinner-dots color="primary" size="40px" />
+    </div>
+
+    <div v-else class="row q-col-gutter-md">
+      <div v-if="subscriptions.length === 0" class="col-12 text-center text-grey q-my-xl">
+        <q-icon name="layers_clear" size="48px" class="q-mb-sm" />
+        <div class="text-h6">No subscriptions tracked yet.</div>
+        <div class="text-body2">Click the plus icon down right to get started.</div>
       </div>
 
-      <div class="col-12 col-sm-6 col-md-3">
-        <q-card class="bg-teal text-white">
+      <div v-else v-for="subscription in subscriptions" :key="subscription.id" class="col-12 col-md-6 col-lg-4">
+        <q-card class="my-card">
           <q-card-section>
-            <div class="text-h6">Monthly Spend</div>
-            <div class="text-h4">$142.50</div>
+            <div class="text-h6">{{ subscription.service_name }}</div>
+            <div class="text-subtitle2 text-grey-7">{{ subscription.subscription_type }}</div>
           </q-card-section>
-        </q-card>
-      </div>
 
-      <div class="col-12 col-sm-6 col-md-3">
-        <q-card class="bg-orange text-white">
           <q-card-section>
-            <div class="text-h6">Upcoming Renewals</div>
-            <div class="text-h4">3</div>
+            <div><strong>Next Billing Date:</strong> {{ subscription.next_billing_date }}</div>
+            <div class="q-mt-xs"><strong>Amount:</strong> ${{ subscription.amount }}</div>
           </q-card-section>
-        </q-card>
-      </div>
 
-      <div class="col-12 col-sm-6 col-md-3">
-        <q-card class="bg-red text-white">
-          <q-card-section>
-            <div class="text-h6">Expired</div>
-            <div class="text-h4">1</div>
-          </q-card-section>
+          <q-card-actions align="right">
+            <q-btn flat label="Edit" color="primary" @click="editSubscription(subscription)" />
+          </q-card-actions>
         </q-card>
-      </div>
-
-      <!-- Recent Subscriptions Table -->
-      <div class="col-12">
-        <q-table
-          title="Active Subscriptions"
-          :rows="rows"
-          :columns="columns"
-          row-key="name"
-          flat
-          bordered
-        >
-          <template v-slot:body-cell-status="props">
-            <q-td :props="props">
-              <q-chip
-                :color="props.value === 'Active' ? 'green' : 'red'"
-                text-color="white"
-                dense
-              >
-                {{ props.value }}
-              </q-chip>
-            </q-td>
-          </template>
-          <template v-slot:body-cell-actions="props">
-            <q-td :props="props">
-              <q-btn flat round color="grey" icon="edit" size="sm" />
-              <q-btn flat round color="negative" icon="delete" size="sm" />
-            </q-td>
-          </template>
-        </q-table>
       </div>
     </div>
 
-    <!-- Floating Action Button -->
+    <q-dialog v-model="isSubscriptionFormOpen" persistent>
+      <q-card style="min-width: 350px; max-width: 500px; width: 100%;">
+        <q-card-section class="row items-center q-pb-none">
+          <div class="text-h6">New Subscription</div>
+          <q-space />
+          <q-btn icon="close" flat round dense v-close-popup @click="closeSubscriptionForm" />
+        </q-card-section>
+
+        <q-card-section class="q-pa-none">
+          <SubscriptionForm @close="closeSubscriptionForm" :subscription="selectedSubscription" />
+        </q-card-section>
+      </q-card>
+    </q-dialog>
+    
     <q-page-sticky position="bottom-right" :offset="[18, 18]">
-      <q-btn fab icon="add" color="primary" @click="addNewSubscription">
-        <q-tooltip>Add Subscription</q-tooltip>
+      <q-btn fab icon="add" color="primary" @click="openSubscriptionForm">
+        <q-tooltip anchor="center left" self="center right">Track New Subscription</q-tooltip>
       </q-btn>
     </q-page-sticky>
   </q-page>
 </template>
 
-<script setup>
-import { ref } from 'vue'
+<script setup lang="ts">
+import { onMounted, computed, ref } from 'vue'
 import { useQuasar } from 'quasar'
+import SubscriptionForm from '../components/SubscriptionForm.vue'
+import { useAuth } from '../store/auth'
+import { useServiceStore } from '../store/service'
+import { useSubscriptionStore } from '../store/subscription'
 
 const $q = useQuasar()
+const authStore = useAuth()
+const serviceStore = useServiceStore()
+const subscriptionStore = useSubscriptionStore()
 
-const columns = [
-  { name: 'name', align: 'left', label: 'Service', field: 'name', sortable: true },
-  { name: 'category', align: 'left', label: 'Category', field: 'category', sortable: true },
-  { name: 'price', align: 'center', label: 'Price ($)', field: 'price', sortable: true },
-  { name: 'nextBilling', align: 'left', label: 'Next Billing', field: 'nextBilling', sortable: true },
-  { name: 'status', align: 'center', label: 'Status', field: 'status' },
-  { name: 'actions', align: 'right', label: 'Actions', field: 'actions' }
-]
+// FIX 4: Ensured reactive references are correctly unwrapped or extracted cleanly depending on store design
+const authData = computed(() => authStore.authData)
+const isSubscriptionFormOpen = ref(false)
+const selectedSubscription = ref<any | null>(null)
+const subscriptions = computed(() => subscriptionStore.allSubscriptions || [])
 
-const rows = ref([
-  {
-    name: 'Netflix',
-    category: 'Entertainment',
-    price: 15.99,
-    nextBilling: '2023-11-15',
-    status: 'Active'
-  },
-  {
-    name: 'Spotify',
-    category: 'Music',
-    price: 9.99,
-    nextBilling: '2023-11-20',
-    status: 'Active'
-  },
-  {
-    name: 'Adobe CC',
-    category: 'Software',
-    price: 52.99,
-    nextBilling: '2023-11-01',
-    status: 'Active'
-  }
-])
+onMounted(() => {
+  serviceStore.fetchServices()
+  subscriptionStore.fetchSubscriptions()
+})
 
-const addNewSubscription = () => {
-  $q.notify({
-    message: 'Add new subscription clicked',
-    color: 'info'
-  })
+const openSubscriptionForm = () => {
+  selectedSubscription.value = null
+  isSubscriptionFormOpen.value = true
+}
+
+const closeSubscriptionForm = () => {
+  isSubscriptionFormOpen.value = false
+  selectedSubscription.value = null
+}
+
+const editSubscription = (row: any) => {
+  // FIX 5: Creating deep clone so form mutations don't alter dashboard cards pre-save
+  selectedSubscription.value = JSON.parse(JSON.stringify(row))
+  isSubscriptionFormOpen.value = true
 }
 </script>
+
+<style scoped>
+.my-card {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
+.my-card:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 15px rgba(0,0,0,0.1);
+}
+</style>

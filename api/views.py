@@ -2,17 +2,20 @@ from rest_framework.generics import (
     ListAPIView,
     ListCreateAPIView,
     CreateAPIView,
-    RetrieveAPIView,
     RetrieveUpdateDestroyAPIView,
-    DestroyAPIView,
+    RetrieveUpdateAPIView
 )
+from rest_framework.views import APIView
+from rest_framework.response import Response
+from rest_framework import status
 from .serializers import (
     ListCustomUserSerializer,
     CustomUserSerializer,
+    ChangePasswordSerializer,
     CustomTokenObtainPairSerializer,
     BudgetSerializer,
     ListBudgetSerializer,
-    SubscriptionSerializer
+    SubscriptionSerializer,
 )
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.exceptions import PermissionDenied
@@ -38,12 +41,34 @@ class ListCustomUsersApiView(ListAPIView):
     queryset = CustomUser.objects.all()
 
 
-class DetailCustomUserApiView(RetrieveAPIView):
-    serializer_class = CustomUserSerializer
+class DetailCustomUserApiView(RetrieveUpdateAPIView):
+    serializer_class = ListCustomUserSerializer
     permission_classes = [IsAuthenticated]
 
     def get_object(self):
         return self.request.user
+
+
+class ChangePasswordAPIView(APIView):
+    permission_classes = [IsAuthenticated]
+
+    def post(self, request, *args, **kwargs):
+        serializer = ChangePasswordSerializer(
+            data=request.data, context={"request": request}
+        )
+
+        if serializer.is_valid():
+            user = request.user
+            # Crucial step: Hash and commit the new password to the database
+            user.set_password(serializer.validated_data["new_password"])
+            user.save()
+
+            return Response(
+                {"detail": "Your security credentials have been updated successfully."},
+                status=status.HTTP_200_OK,
+            )
+
+        return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
 class ServiceListCreateAPIView(ListCreateAPIView):
@@ -70,23 +95,22 @@ class ServiceListCreateAPIView(ListCreateAPIView):
         if self.request.method == "POST":
             return [IsAuthenticated()]
         return [AllowAny()]
-    
+
 
 class ServiceDetailAPIView(RetrieveUpdateDestroyAPIView):
     """
     GET: Retrieve service details (Public)
     PUT/PATCH/DELETE: Update or delete a service (Admin only)
     """
+
     queryset = Service.objects.all()
     serializer_class = ServiceSerializer
     permission_classes = [IsAuthenticated]
-
 
     def get_permissions(self):
         if self.request.method == "GET":
             return [AllowAny()]
         return [IsAuthenticated()]
-    
 
     def perform_update(self, serializer):
         # Only allow updates if user is admin or the creator of the service
@@ -96,8 +120,7 @@ class ServiceDetailAPIView(RetrieveUpdateDestroyAPIView):
             serializer.save()
         else:
             raise PermissionDenied("You do not have permission to edit this service.")
-        
-    
+
     def perform_destroy(self, instance):
         # Only allow deletion if user is admin or the creator of the service
         user = self.request.user
@@ -105,7 +128,7 @@ class ServiceDetailAPIView(RetrieveUpdateDestroyAPIView):
             instance.delete()
         else:
             raise PermissionDenied("You do not have permission to delete this service.")
-        
+
 
 class BudgetListCreateAPIView(ListCreateAPIView):
     serializer_class = BudgetSerializer
@@ -113,7 +136,7 @@ class BudgetListCreateAPIView(ListCreateAPIView):
 
     def get_queryset(self):
         return Budget.objects.filter(user=self.request.user)
-    
+
     def get_serializer_class(self):
         if self.request.method == "GET":
             return ListBudgetSerializer
@@ -122,14 +145,14 @@ class BudgetListCreateAPIView(ListCreateAPIView):
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
-    
+
 class BudgetDetailAPIView(RetrieveUpdateDestroyAPIView):
     serializer_class = BudgetSerializer
     permission_classes = [IsAuthenticated, IsBudgetOwner]
 
     def get_queryset(self):
         return Budget.objects.filter(user=self.request.user)
-    
+
     def perform_update(self, serializer):
         serializer.save()
 
@@ -143,7 +166,7 @@ class SubscriptionListCreateAPIView(ListCreateAPIView):
 
     def get_queryset(self):
         return Subscription.objects.filter(user=self.request.user)
-    
+
     def perform_create(self, serializer):
         serializer.save(user=self.request.user)
 
@@ -154,9 +177,9 @@ class SubscriptionDetailAPIView(RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return Subscription.objects.filter(user=self.request.user)
-    
+
     def perform_update(self, serializer):
         serializer.save()
 
     def perform_destroy(self, instance):
-        instance.delete()   
+        instance.delete()
