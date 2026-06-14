@@ -72,10 +72,10 @@ class ListCustomUserSerializer(serializers.ModelSerializer):
     
 
 class ChangePasswordSerializer(serializers.Serializer):
-    old_password = serializers.CharField(required=True, write_only=True)
+    current_password = serializers.CharField(required=True, write_only=True)
     new_password = serializers.CharField(required=True, write_only=True)
 
-    def validate_old_password(self, value):
+    def validate_current_password(self, value):
         user = self.context['request'].user
         if not user.check_password(value):
             raise serializers.ValidationError("Your current password was entered incorrectly.")
@@ -84,7 +84,7 @@ class ChangePasswordSerializer(serializers.Serializer):
     def validate(self, data):
         validate_password(data['new_password'], user=self.context['request'].user)
         
-        if data['old_password'] == data['new_password']:
+        if data['current_password'] == data['new_password']:
             raise serializers.ValidationError({"new_password": "The new password cannot be identical to your old one."})
             
         return data
@@ -153,7 +153,7 @@ class SubscriptionSerializer(serializers.ModelSerializer):
         model = Subscription
         fields = (
             'id', 'user', 'service', 'service_name', 'plan_name', 
-            'status', 'cost', 'billing_cycle', 'next_billing_date', 
+            'status', 'category', 'cost', 'billing_cycle', 'next_billing_date', 
             'notes', 'created_at', 'updated_at'
         )
         read_only_fields = ('id', 'user', 'created_at', 'updated_at')

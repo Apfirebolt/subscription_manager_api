@@ -8,7 +8,8 @@ from .views import (
     BudgetListCreateAPIView,
     BudgetDetailAPIView,
     SubscriptionListCreateAPIView,
-    SubscriptionDetailAPIView
+    SubscriptionDetailAPIView,
+    ChangePasswordAPIView,
 )
 from rest_framework_simplejwt.views import (
     TokenObtainPairView,
@@ -20,6 +21,7 @@ urlpatterns = [
     path("login", TokenObtainPairView.as_view(), name="signin"),
     path("refresh", TokenRefreshView.as_view(), name="refresh"),
     path("profile", DetailCustomUserApiView.as_view(), name="me"),
+    path("change-password", ChangePasswordAPIView.as_view(), name="change-password"),
     path("users", ListCustomUsersApiView.as_view(), name="list-users"),
     path("services", ServiceListCreateAPIView.as_view(), name="services"),
     path("services/<int:pk>", ServiceDetailAPIView.as_view(), name="service-detail"),
