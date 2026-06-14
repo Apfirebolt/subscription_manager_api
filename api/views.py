@@ -17,6 +17,7 @@ from .serializers import (
     ListBudgetSerializer,
     SubscriptionSerializer,
 )
+from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.views import TokenObtainPairView
@@ -152,8 +153,34 @@ class BudgetDetailAPIView(RetrieveUpdateDestroyAPIView):
 
     def get_queryset(self):
         return Budget.objects.filter(user=self.request.user)
-
+    
     def perform_update(self, serializer):
+        user = self.request.user
+        current_budget = self.get_object()
+        
+        # Check if 'is_active' is being updated in this request
+        is_active_input = serializer.validated_data.get('is_active')
+
+        # 1. If trying to deactivate, check if it's the only budget that exists
+        if is_active_input is False:
+            total_budgets = Budget.objects.filter(user=user).count()
+            if total_budgets <= 1:
+                raise serializers.ValidationError(
+                    {'is_active': 'You cannot deactivate the only budget that exists.'}
+                )
+                
+            # Optional: If you also want to prevent deactivating if no OTHER budget is active
+            other_active_exists = Budget.objects.filter(user=user, is_active=True).exclude(pk=current_budget.pk).exists()
+            if not other_active_exists:
+                raise serializers.ValidationError(
+                    {'is_active': 'At least one budget must remain active. Activate another budget first.'}
+                )
+
+        # 2. If this budget is being set to active, deactivate ALL OTHER budgets for this user
+        if is_active_input is True:
+            Budget.objects.filter(user=user).exclude(pk=current_budget.pk).update(is_active=False)
+        
+        # 3. Save the current budget changes
         serializer.save()
 
     def perform_destroy(self, instance):

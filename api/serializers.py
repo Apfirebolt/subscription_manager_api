@@ -119,14 +119,7 @@ class BudgetSerializer(serializers.ModelSerializer):
         model = Budget
         fields = ('id', 'user', 'amount', 'duration', 'description', 'created_at', 'updated_at', 'is_active')
         read_only_fields = ('id', 'created_at', 'user', 'updated_at')
-
-    def perform_update(self, serializer):
-        # if there is no budget active for this user, set this one as active, else set it as inactive
-        user = self.context['request'].user
-        if not Budget.objects.filter(user=user, is_active=True).exists():
-            serializer.save(is_active=True)
-        else:
-            serializer.save(is_active=False)
+        
 
     def perform_create(self, serializer):
         # if there is no budget active for this user, set this one as active, else set it as inactive
@@ -167,6 +160,16 @@ class SubscriptionSerializer(serializers.ModelSerializer):
             })
 
         return attrs
+    
+    def validate_status(self, value):
+        # Ensure that only 1 subscription can be active for a given service for the same user
+        user = self.context['request'].user
+        if value == 'ACTIVE':
+            service = self.initial_data.get('service')
+            if Subscription.objects.filter(user=user, service=service, status='ACTIVE').exists():
+                raise serializers.ValidationError("You already have an active subscription for this service.")
+        
+        return value
 
 
 class ListSubscriptionSerializer(serializers.ModelSerializer):
