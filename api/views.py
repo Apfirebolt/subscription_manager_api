@@ -17,11 +17,12 @@ from .serializers import (
     ListBudgetSerializer,
     SubscriptionSerializer,
 )
+from drf_spectacular.utils import extend_schema, inline_serializer
 from rest_framework import serializers
 from rest_framework.permissions import IsAuthenticated, AllowAny, IsAdminUser
 from rest_framework.exceptions import PermissionDenied
 from rest_framework_simplejwt.views import TokenObtainPairView
-from users.models import CustomUser
+from users.models import CustomUser, Follow
 from subscriptions.models import Service, Budget, Subscription
 from .serializers import ServiceSerializer, ListServiceSerializer
 from .permissions import IsBudgetOwner
@@ -210,3 +211,147 @@ class SubscriptionDetailAPIView(RetrieveUpdateDestroyAPIView):
 
     def perform_destroy(self, instance):
         instance.delete()
+
+
+class FollowUserAPIView(APIView):
+    """
+    POST: Send a follow request to a target user.
+    If already requested, returns a 400.
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        request=None,
+        responses={
+            201: inline_serializer(
+                name='FollowSuccessResponse',
+                fields={'detail': serializers.CharField()}
+            ),
+            400: inline_serializer(
+                name='FollowErrorResponse',
+                fields={'detail': serializers.CharField()}
+            ),
+            404: inline_serializer(
+                name='FollowUserNotFoundResponse',
+                fields={'detail': serializers.CharField()}
+            )
+        }
+    )
+    def post(self, request, user_id, *args, **kwargs):
+        follower = request.user
+        
+        try:
+            target_user = CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        if follower == target_user:
+            return Response({"detail": "You cannot follow yourself."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Check if a relationship already exists
+        follow_relation, created = Follow.objects.get_or_create(
+            follower=follower, 
+            following=target_user
+        )
+
+        if not created:
+            if follow_relation.is_accepted:
+                return Response({"detail": "You are already following this user."}, status=status.HTTP_400_BAD_REQUEST)
+            return Response({"detail": "Follow request is already pending."}, status=status.HTTP_400_BAD_REQUEST)
+
+        return Response({"detail": "Follow request sent successfully."}, status=status.HTTP_201_CREATED)
+    
+
+class UnfollowUserAPIView(APIView):
+    """
+    DELETE: Unfollow a user or cancel a pending follow request.
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        responses={
+            200: inline_serializer(
+                name='UnfollowSuccessResponse',
+                fields={'detail': serializers.CharField()}
+            ),
+            400: inline_serializer(
+                name='UnfollowErrorResponse',
+                fields={'detail': serializers.CharField()}
+            ),
+            404: inline_serializer(
+                name='UnfollowUserNotFoundResponse',
+                fields={'detail': serializers.CharField()}
+            )
+        }
+    )
+    def delete(self, request, user_id, *args, **kwargs):
+        follower = request.user
+        
+        try:
+            target_user = CustomUser.objects.get(id=user_id)
+        except CustomUser.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        follow_relation = Follow.objects.filter(follower=follower, following=target_user)
+
+        if follow_relation.exists():
+            follow_relation.delete()
+            return Response({"detail": "Successfully unfollowed user / canceled request."}, status=status.HTTP_200_OK)
+        
+        return Response({"detail": "You are not following this user."}, status=status.HTTP_400_BAD_REQUEST)
+    
+
+class AcceptFollowRequestAPIView(APIView):
+    """
+    POST: Accept an incoming pending follow request from another user.
+    """
+    permission_classes = [IsAuthenticated]
+
+    @extend_schema(
+        request=None,
+        responses={
+            200: inline_serializer(
+                name='AcceptFollowResponse',
+                fields={
+                    'detail': serializers.CharField(),
+                    'mutual': serializers.BooleanField(required=False)
+                }
+            ),
+            400: inline_serializer(
+                name='AcceptFollowErrorResponse',
+                fields={'detail': serializers.CharField()}
+            ),
+            404: inline_serializer(
+                name='AcceptFollowNotFoundResponse',
+                fields={'detail': serializers.CharField()}
+            )
+        }
+    )
+    def post(self, request, user_id, *args, **kwargs):
+        current_user = request.user  # The one who received the request (following)
+        
+        try:
+            requester_user = CustomUser.objects.get(id=user_id)  # The one who sent it (follower)
+        except CustomUser.DoesNotExist:
+            return Response({"detail": "User not found."}, status=status.HTTP_404_NOT_FOUND)
+
+        try:
+            follow_relation = Follow.objects.get(follower=requester_user, following=current_user)
+        except Follow.DoesNotExist:
+            return Response({"detail": "No pending follow request found from this user."}, status=status.HTTP_404_NOT_FOUND)
+
+        if follow_relation.is_accepted:
+            return Response({"detail": "You have already accepted this follow request."}, status=status.HTTP_400_BAD_REQUEST)
+
+        # Accept the request
+        follow_relation.is_accepted = True
+        follow_relation.save()
+
+        # Check if it results in a mutual connection to tailor your response message
+        is_mutual = current_user.is_mutual_with(requester_user)
+        response_data = {"detail": "Follow request accepted."}
+        if is_mutual:
+            response_data["mutual"] = True
+            response_data["detail"] += " You are now mutual followers, unlocking profile features!"
+
+        return Response(response_data, status=status.HTTP_200_OK)
