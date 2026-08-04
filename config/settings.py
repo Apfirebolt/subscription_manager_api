@@ -161,6 +161,13 @@ SIMPLE_JWT = {
     "AUTH_HEADER_NAME": "HTTP_AUTHORIZATION",
 }
 
+KAFKA_CONFIG = {
+    'bootstrap.servers': 'localhost:9092',  # Replace with your broker host
+    'group.id': 'django-login-consumer-group',
+    'auto.offset.reset': 'earliest',
+    'enable.auto.commit': True,
+}
+
 
 # Static files (CSS, JavaScript, Images)
 # https://docs.djangoproject.com/en/6.0/howto/static-files/
